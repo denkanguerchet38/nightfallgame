@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NightFall — Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d0d14;--bg2:#13131f;--bg3:#1a1a2e;--bg4:#22223a;--red:#dc143c;--red2:#ff1a4a;--red-dim:#8b0f28;--text:#e8e6e3;--text2:#9d9b97;--text3:#5c5a56;--border:#2a2a3e;--green:#2ecc71;--yellow:#f1c40f;--blue:#3498db}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--red);text-decoration:none}
+
+.login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:24px}
+.login-page h1{font-size:48px;color:var(--red);font-weight:800;letter-spacing:-2px}
+.login-page p{color:var(--text2);font-size:16px}
+.login-btn{background:var(--red);color:#fff;border:none;padding:14px 32px;border-radius:8px;font-size:16px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:.2s}
+.login-btn:hover{background:var(--red2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(220,20,60,.3)}
+.error-msg{background:rgba(220,20,60,.15);border:1px solid var(--red-dim);padding:12px 20px;border-radius:8px;color:var(--red)}
+
+.app{display:none}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--bg2);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column}
+.sidebar .logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.sidebar .logo h2{color:var(--red);font-size:22px;font-weight:800;letter-spacing:-1px}
+.sidebar .logo span{color:var(--text3);font-size:12px}
+.sidebar .user{padding:16px 20px;border-top:1px solid var(--border);margin-top:auto;display:flex;align-items:center;gap:10px}
+.sidebar .user img{width:32px;height:32px;border-radius:50%}
+.sidebar .user span{color:var(--text2);font-size:13px;flex:1}
+.sidebar .user a{color:var(--text3);font-size:12px}
+
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text2);cursor:pointer;transition:.15s;font-size:14px;border-left:3px solid transparent}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{color:var(--red);background:rgba(220,20,60,.08);border-left-color:var(--red)}
+.nav-item .icon{font-size:18px;width:24px;text-align:center}
+
+.main{margin-left:220px;padding:32px}
+.page{display:none}
+.page.active{display:block}
+.page-title{font-size:24px;font-weight:700;margin-bottom:8px}
+.page-desc{color:var(--text2);margin-bottom:28px;font-size:14px}
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+.card h3{font-size:16px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:18px}
+.stat-box .label{color:var(--text3);font-size:12px;text-transform:uppercase;letter-spacing:1px}
+.stat-box .value{font-size:28px;font-weight:700;margin-top:4px}
+.stat-box .value.red{color:var(--red)}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;padding:10px 12px;color:var(--text3);font-size:12px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--bg3)}
+.rank{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:12px;font-weight:700}
+.rank-1{background:linear-gradient(135deg,#ffd700,#ffb300);color:#000}
+.rank-2{background:linear-gradient(135deg,#c0c0c0,#a0a0a0);color:#000}
+.rank-3{background:linear-gradient(135deg,#cd7f32,#a0522d);color:#fff}
+.rank-n{background:var(--bg4);color:var(--text2)}
+.bar{display:flex;align-items:center;gap:8px}
+.bar-track{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;max-width:120px}
+.bar-fill{height:100%;background:var(--red);border-radius:3px;transition:width .3s}
+.bar-pct{color:var(--text2);font-size:12px;min-width:36px}
+
+.word-grid{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0;max-height:400px;overflow-y:auto;padding:4px}
+.word-tag{background:var(--bg3);border:1px solid var(--border);padding:4px 12px;border-radius:6px;font-size:13px;display:flex;align-items:center;gap:6px;font-family:monospace}
+.word-tag .del{color:var(--text3);cursor:pointer;font-size:16px;line-height:1}
+.word-tag .del:hover{color:var(--red)}
+.input-row{display:flex;gap:10px;margin-bottom:16px}
+.input-row input,.input-row select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:14px;flex:1}
+.input-row input:focus,.input-row select:focus{outline:none;border-color:var(--red)}
+.btn{background:var(--red);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;transition:.15s;font-weight:600}
+.btn:hover{background:var(--red2)}
+.btn-sm{padding:6px 14px;font-size:13px}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--red);color:var(--red);background:transparent}
+.count{color:var(--text3);font-size:13px;margin-left:auto}
+
+.bt-item{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)}
+.bt-item:last-child{border:none}
+.bt-emojis{font-size:24px;min-width:100px}
+.bt-answers{flex:1;color:var(--text2);font-size:13px}
+.bt-answers strong{color:var(--text);font-weight:500}
+.bt-del{color:var(--text3);cursor:pointer;padding:6px;border-radius:6px;transition:.15s}
+.bt-del:hover{color:var(--red);background:rgba(220,20,60,.1)}
+
+.vc-config{display:flex;flex-direction:column;gap:12px}
+.vc-config label{color:var(--text2);font-size:13px}
+.vc-config input{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:14px}
+.vc-config input:focus{outline:none;border-color:var(--red)}
+.vc-status{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:8px;font-size:14px}
+.vc-status.on{background:rgba(46,204,113,.1);color:var(--green)}
+.vc-status.off{background:rgba(220,20,60,.1);color:var(--red)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.on{background:var(--green)}
+.dot.off{background:var(--red)}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);padding:12px 20px;border-radius:10px;font-size:14px;transform:translateY(80px);opacity:0;transition:.3s;z-index:999}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:var(--green);color:var(--green)}
+.toast.error{border-color:var(--red);color:var(--red)}
+
+.tabs{display:flex;gap:4px;margin-bottom:20px}
+.tab{padding:8px 16px;border-radius:6px;color:var(--text2);cursor:pointer;font-size:14px;transition:.15s}
+.tab:hover{background:var(--bg3)}
+.tab.active{background:rgba(220,20,60,.1);color:var(--red)}
+
+@media(max-width:768px){.sidebar{width:60px}.sidebar .logo h2,.sidebar .user span,.sidebar .user a,.nav-item span{display:none}.nav-item{justify-content:center;padding:14px}.main{margin-left:60px;padding:16px}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-page" id="loginPage">
+  <h1>NIGHTFALL</h1>
+  <p>Dashboard de gestion du bot</p>
+  <div id="loginError" style="display:none" class="error-msg"></div>
+  <button class="login-btn" onclick="location.href='/auth/discord'">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+    Se connecter avec Discord
+  </button>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo">
+      <h2>NIGHTFALL</h2>
+      <span>Dashboard v2</span>
+    </div>
+    <div class="nav-item active" data-page="stats"><span class="icon">📊</span><span>Stats</span></div>
+    <div class="nav-item" data-page="wordle"><span class="icon">🟩</span><span>Wordle</span></div>
+    <div class="nav-item" data-page="blindtest"><span class="icon">🎭</span><span>Blind Test</span></div>
+    <div class="nav-item" data-page="voice"><span class="icon">🔊</span><span>Voice Creator</span></div>
+    <div class="user" id="userInfo">
+      <img src="" id="userAvatar">
+      <span id="userName"></span>
+      <a href="/auth/logout">Quitter</a>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- STATS PAGE -->
+    <div class="page active" id="page-stats">
+      <h1 class="page-title">📊 Statistiques</h1>
+      <p class="page-desc">Classement et statistiques des joueurs</p>
+
+      <div class="tabs">
+        <div class="tab active" data-lb="">General</div>
+        <div class="tab" data-lb="wordle">Wordle</div>
+        <div class="tab" data-lb="morpion">Morpion</div>
+        <div class="tab" data-lb="puissance4">Puiss.4</div>
+        <div class="tab" data-lb="duel">Duel</div>
+        <div class="tab" data-lb="loupgarou">Loup-G.</div>
+        <div class="tab" data-lb="blindtest">Blind T.</div>
+        <div class="tab" data-lb="deviner">Nombre</div>
+      </div>
+
+      <div class="card">
+        <div id="lbContent">Chargement...</div>
+      </div>
+    </div>
+
+    <!-- WORDLE PAGE -->
+    <div class="page" id="page-wordle">
+      <h1 class="page-title">🟩 Mots Wordle</h1>
+      <p class="page-desc">Ajouter, supprimer et gerer les mots de 5 lettres</p>
+
+      <div class="card">
+        <h3>Ajouter un mot <span class="count" id="wordCount"></span></h3>
+        <div class="input-row">
+          <input type="text" id="newWord" placeholder="Mot de 5 lettres..." maxlength="5">
+          <button class="btn" onclick="addWord()">Ajouter</button>
+        </div>
+        <div class="input-row">
+          <input type="text" id="wordSearch" placeholder="Rechercher un mot..." oninput="filterWords()">
+        </div>
+        <div class="word-grid" id="wordGrid">Chargement...</div>
+      </div>
+    </div>
+
+    <!-- BLIND TEST PAGE -->
+    <div class="page" id="page-blindtest">
+      <h1 class="page-title">🎭 Blind Test Emoji</h1>
+      <p class="page-desc">Gerer les enigmes du blind test</p>
+
+      <div class="card">
+        <h3>Ajouter une enigme</h3>
+        <div class="input-row">
+          <select id="btCategory">
+            <option value="films">🎬 Films</option>
+            <option value="series">📺 Series</option>
+            <option value="jeux">🎮 Jeux</option>
+          </select>
+        </div>
+        <div class="input-row">
+          <input type="text" id="btEmojis" placeholder="Emojis (ex: 🧙‍♂️💍🌋)">
+          <input type="text" id="btAnswers" placeholder="Reponses separees par , (ex: seigneur des anneaux, lotr)">
+          <button class="btn" onclick="addBlindtest()">Ajouter</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-bt="films">🎬 Films</div>
+        <div class="tab" data-bt="series">📺 Series</div>
+        <div class="tab" data-bt="jeux">🎮 Jeux</div>
+      </div>
+
+      <div class="card">
+        <div id="btContent">Chargement...</div>
+      </div>
+    </div>
+
+    <!-- VOICE CREATOR PAGE -->
+    <div class="page" id="page-voice">
+      <h1 class="page-title">🔊 Voice Creator</h1>
+      <p class="page-desc">Configurer le systeme de salons vocaux temporaires</p>
+
+      <div class="card">
+        <h3>Statut</h3>
+        <div id="vcStatus" class="vc-status off"><span class="dot off"></span> Non configure</div>
+      </div>
+
+      <div class="card">
+        <h3>Configuration</h3>
+        <div class="vc-config">
+          <label>ID du salon hub (le salon "Rejoindre pour creer")</label>
+          <input type="text" id="vcHubId" placeholder="Ex: 1234567890123456789">
+          <label>ID de la categorie (optionnel)</label>
+          <input type="text" id="vcCatId" placeholder="Ex: 1234567890123456789">
+          <div style="margin-top:8px">
+            <button class="btn" onclick="saveVoiceConfig()">Sauvegarder</button>
+            <button class="btn btn-outline" onclick="clearVoiceConfig()" style="margin-left:8px">Reinitialiser</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== AUTH ====================
+(async () => {
+  const err = new URLSearchParams(location.search).get('error');
+  if (err) {
+    const el = document.getElementById('loginError');
+    el.style.display = 'block';
+    const msgs = { unauthorized: 'Acces refuse. Seul le owner peut se connecter.', token_fail: 'Erreur de connexion Discord.', oauth_fail: 'Erreur OAuth2.' };
+    el.textContent = msgs[err] || 'Erreur inconnue.';
+  }
+
+  const res = await fetch('/auth/me');
+  const user = await res.json();
+  if (user) {
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('userAvatar').src = user.avatar;
+    document.getElementById('userName').textContent = user.username;
+    loadStats();
+    loadWords();
+    loadBlindtest();
+    loadVoiceConfig();
+  }
+})();
+
+// ==================== NAVIGATION ====================
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('page-' + el.dataset.page).classList.add('active');
+  });
+});
+
+// ==================== TOAST ====================
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ==================== STATS ====================
+let currentLb = '';
+
+document.querySelectorAll('[data-lb]').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('[data-lb]').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentLb = el.dataset.lb;
+    loadStats();
+  });
+});
+
+async function loadStats() {
+  const url = currentLb ? '/api/leaderboard?game=' + currentLb : '/api/leaderboard';
+  const res = await fetch(url);
+  const data = await res.json();
+  const el = document.getElementById('lbContent');
+
+  if (data.length === 0) {
+    el.innerHTML = '<p style="color:var(--text3)">Aucune donnee pour le moment.</p>';
+    return;
+  }
+
+  let html = '<table><thead><tr><th style="width:50px">#</th><th>Joueur</th><th>W</th><th>L</th><th>Winrate</th></tr></thead><tbody>';
+  data.forEach((r, i) => {
+    const w = currentLb ? r.wins : r.total_wins;
+    const l = currentLb ? r.losses : r.total_losses;
+    const pct = w + l > 0 ? Math.round((w / (w + l)) * 100) : 0;
+    const cls = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-n';
+    html += '<tr>';
+    html += '<td><span class="rank ' + cls + '">' + (i + 1) + '</span></td>';
+    html += '<td>' + r.user_id + '</td>';
+    html += '<td>' + w + '</td>';
+    html += '<td>' + l + '</td>';
+    html += '<td><div class="bar"><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div><span class="bar-pct">' + pct + '%</span></div></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+// ==================== WORDLE WORDS ====================
+let allWords = [];
+
+async function loadWords() {
+  const res = await fetch('/api/words');
+  allWords = await res.json();
+  renderWords();
+}
+
+function renderWords(filter = '') {
+  const f = filter.toLowerCase();
+  const filtered = f ? allWords.filter(w => w.includes(f)) : allWords;
+  document.getElementById('wordCount').textContent = allWords.length + ' mots';
+  const el = document.getElementById('wordGrid');
+  el.innerHTML = filtered.slice(0, 200).map(w =>
+    '<div class="word-tag">' + w + '<span class="del" onclick="removeWord(\'' + w + '\')">&times;</span></div>'
+  ).join('');
+  if (filtered.length > 200) el.innerHTML += '<div style="color:var(--text3);font-size:13px;padding:8px">... et ' + (filtered.length - 200) + ' autres</div>';
+}
+
+function filterWords() {
+  renderWords(document.getElementById('wordSearch').value);
+}
+
+async function addWord() {
+  const input = document.getElementById('newWord');
+  const word = input.value.trim();
+  if (word.length !== 5) return toast('Le mot doit faire 5 lettres', 'error');
+
+  const res = await fetch('/api/words/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ word }),
+  });
+  const data = await res.json();
+  if (data.error) return toast(data.error, 'error');
+  input.value = '';
+  toast('Mot ajoute !');
+  loadWords();
+}
+
+async function removeWord(word) {
+  const res = await fetch('/api/words/remove', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ word }),
+  });
+  const data = await res.json();
+  if (data.error) return toast(data.error, 'error');
+  toast('Mot supprime');
+  loadWords();
+}
+
+// ==================== BLIND TEST ====================
+let btData = {};
+let currentBtCat = 'films';
+
+document.querySelectorAll('[data-bt]').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('[data-bt]').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentBtCat = el.dataset.bt;
+    renderBlindtest();
+  });
+});
+
+async function loadBlindtest() {
+  const res = await fetch('/api/blindtest');
+  btData = await res.json();
+  renderBlindtest();
+}
+
+function renderBlindtest() {
+  const items = btData[currentBtCat] || [];
+  const el = document.getElementById('btContent');
+
+  if (items.length === 0) {
+    el.innerHTML = '<p style="color:var(--text3)">Aucune enigme dans cette categorie.</p>';
+    return;
+  }
+
+  el.innerHTML = items.map((item, i) =>
+    '<div class="bt-item">' +
+    '<div class="bt-emojis">' + item.emojis + '</div>' +
+    '<div class="bt-answers"><strong>' + item.answer[0] + '</strong>' +
+    (item.answer.length > 1 ? ' <span>(+' + (item.answer.length - 1) + ' alias)</span>' : '') +
+    '</div>' +
+    '<div class="bt-del" onclick="removeBlindtest(\'' + currentBtCat + '\',' + i + ')">&times;</div>' +
+    '</div>'
+  ).join('');
+}
+
+async function addBlindtest() {
+  const cat = document.getElementById('btCategory').value;
+  const emojis = document.getElementById('btEmojis').value.trim();
+  const answersStr = document.getElementById('btAnswers').value.trim();
+
+  if (!emojis || !answersStr) return toast('Remplis tous les champs', 'error');
+
+  const answers = answersStr.split(',').map(a => a.trim()).filter(Boolean);
+  if (answers.length === 0) return toast('Au moins une reponse', 'error');
+
+  const res = await fetch('/api/blindtest/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ category: cat, emojis, answers }),
+  });
+  const data = await res.json();
+  if (data.error) return toast(data.error, 'error');
+
+  document.getElementById('btEmojis').value = '';
+  document.getElementById('btAnswers').value = '';
+  toast('Enigme ajoutee !');
+  loadBlindtest();
+}
+
+async function removeBlindtest(cat, index) {
+  const res = await fetch('/api/blindtest/remove', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ category: cat, index }),
+  });
+  const data = await res.json();
+  if (data.error) return toast(data.error, 'error');
+  toast('Enigme supprimee');
+  loadBlindtest();
+}
+
+// ==================== VOICE CREATOR ====================
+async function loadVoiceConfig() {
+  const res = await fetch('/api/voicecreator');
+  const data = await res.json();
+
+  document.getElementById('vcHubId').value = data.hubChannelId || '';
+  document.getElementById('vcCatId').value = data.categoryId || '';
+
+  const status = document.getElementById('vcStatus');
+  if (data.hubChannelId) {
+    status.className = 'vc-status on';
+    status.innerHTML = '<span class="dot on"></span> Actif — Hub: ' + data.hubChannelId;
+  } else {
+    status.className = 'vc-status off';
+    status.innerHTML = '<span class="dot off"></span> Non configure';
+  }
+}
+
+async function saveVoiceConfig() {
+  const hubChannelId = document.getElementById('vcHubId').value.trim();
+  const categoryId = document.getElementById('vcCatId').value.trim();
+
+  const res = await fetch('/api/voicecreator', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ hubChannelId, categoryId }),
+  });
+  const data = await res.json();
+  if (data.error) return toast(data.error, 'error');
+  toast('Configuration sauvegardee !');
+  loadVoiceConfig();
+}
+
+async function clearVoiceConfig() {
+  await fetch('/api/voicecreator', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ hubChannelId: '', categoryId: '' }),
+  });
+  toast('Configuration reinitialisee');
+  loadVoiceConfig();
+}
+</script>
+</body>
+</html>

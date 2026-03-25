@@ -51,7 +51,11 @@ function shutdown(signal) {
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-client.login(process.env.BOT_TOKEN).catch(err => {
+client.login(process.env.BOT_TOKEN).then(() => {
+  // Lancer le dashboard web
+  const { startDashboard } = require('./web/server');
+  startDashboard();
+}).catch(err => {
   console.error('[NightFall] Connexion impossible:', err.message);
   process.exit(1);
 });
