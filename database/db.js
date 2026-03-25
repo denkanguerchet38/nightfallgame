@@ -13,6 +13,11 @@ db.exec(`
     draws INTEGER DEFAULT 0,
     PRIMARY KEY (user_id, game)
   );
+
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
 `);
 
 const stmtUpsertWin = db.prepare(`
@@ -44,6 +49,20 @@ function getUserStats(userId) { return stmtGetStats.all(userId); }
 function getLeaderboard() { return stmtLeaderboard.all(); }
 function getGameLeaderboard(game) { return stmtGameLeaderboard.all(game); }
 
+// ========== SETTINGS ==========
+const stmtGetSetting = db.prepare('SELECT value FROM settings WHERE key = ?');
+const stmtSetSetting = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
+
+function getSetting(key) {
+  const row = stmtGetSetting.get(key);
+  return row ? row.value : null;
+}
+
+function setSetting(key, value) {
+  stmtSetSetting.run(key, value);
+}
+
 module.exports = {
   db, addWin, addLoss, addDraw, getUserStats, getLeaderboard, getGameLeaderboard,
+  getSetting, setSetting,
 };
